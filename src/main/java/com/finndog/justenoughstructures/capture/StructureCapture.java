@@ -1138,11 +1138,27 @@ public final class StructureCapture {
             if (state.hasBlockEntity()) {
                 BlockEntity blockEntity = region.getBlockEntity(pos);
                 if (blockEntity != null) {
-                    //? if >=1.21 {
-                    /*CompoundTag tag = blockEntity.saveWithFullMetadata(region.registryAccess());
-                    *///?} else {
-                    CompoundTag tag = blockEntity.saveWithFullMetadata();
-                    //?}
+                    // Only MobJarTile needs a world while serializing its contained mob.
+                    // Do not bind every ProtoChunk block entity during structure placement:
+                    // vanilla container updates would then try to access real chunks.
+                    boolean temporaryMobJarLevel = !blockEntity.hasLevel()
+                            && blockEntity.getClass().getName().equals(
+                                    "com.hollingsworth.arsnouveau.common.block.tile.MobJarTile");
+                    if (temporaryMobJarLevel) {
+                        blockEntity.setLevel(region.getLevel());
+                    }
+                    CompoundTag tag;
+                    try {
+                        //? if >=1.21 {
+                        /*tag = blockEntity.saveWithFullMetadata(region.registryAccess());
+                        *///?} else {
+                        tag = blockEntity.saveWithFullMetadata();
+                        //?}
+                    } finally {
+                        if (temporaryMobJarLevel) {
+                            blockEntity.setLevel(null);
+                        }
+                    }
                     tag.putInt("x", pos.getX() - minX);
                     tag.putInt("y", pos.getY() - minY);
                     tag.putInt("z", pos.getZ() - minZ);
