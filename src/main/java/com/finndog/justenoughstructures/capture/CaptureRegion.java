@@ -188,6 +188,12 @@ final class CaptureRegion extends WorldGenRegion {
     @Override
     public BlockEntity getBlockEntity(BlockPos pos) {
         BlockEntity blockEntity = super.getBlockEntity(pos);
+        // ProtoChunk-created block entities can have no level. Modded NBT loading and
+        // saving (for example Ars Nouveau's MobJarTile) may need it to create entities.
+        // This only attaches context; it does not add the block entity to live chunks.
+        if (blockEntity != null && !blockEntity.hasLevel()) {
+            blockEntity.setLevel(getLevel());
+        }
         StructureTemplate template = TemplatePlacements.current();
         if (blockEntity != null && template != null) {
             filledBy.put(pos.asLong(), template);
